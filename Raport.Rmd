@@ -1,0 +1,228 @@
+---
+title: "Mini raport analityczny"
+author: "Zofia Samsel^[zofia.samsel@student.uj.edu.pl]"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r ładowanie i przygotowanie danych, include=FALSE, echo=FALSE}
+
+#biblioteki
+require(foreign)
+require(essurvey)
+require(stats)
+library(report) 
+require(ggmosaic)
+require(dplyr)
+library(psych)
+require(tinytex)
+
+#ładowanie danych
+setwd("E:/Users/Desktop/R zajecia/mini raport analityczny")
+
+
+#przygotowanie danych
+data = read.spss("ESS9e03_1.sav", to.data.frame = TRUE)
+
+#wybierz Polskę
+df = data[data$cntry=="Poland", ] 
+
+#oznaczanie brakujących danych
+df = recode_missings(df, missing_codes=c("Refusal", 
+                                         "Don't know", "No answer")) 
+
+#usuwanie niepotrzebnych leveli
+df = droplevels(df) 
+
+```
+
+## Analiza wyników sondarzu społecznego European Social Servey z roku 2018.
+
+## Branie udziału w wyborach a stopień przekonania o wpływie jednostki na system polityczny
+Czy występuje zależność między zmienną porządkową pspipla a zmienną nominalną vote01?
+
+Opis zmiennych:
+
+  * zmienna porządkowa **psppipla** - stopień przekanania o wpływie na system polityczny (Not at all; Very little; Some; A lot; A great deal)
+  
+  * zmienna nominalna **vote01** - czy osoba głosowała? (YES, NO)
+  
+W pierwszym kroku ładuję dane i prezentuje je w tabeli:
+
+```{r tabela krzyżowa}
+  
+#przygotowywanie danych
+df$vote01 = df$vote
+df$vote01[df$vote01 == "Not eligible to vote"] = NA
+
+#usunięcie NA z danych vote01 
+df$vote01 = droplevels(df$vote01)
+
+#usuwanie NA z dancyh psppipla01
+df$psppipla01 = droplevels(df$psppipla)
+
+
+#prezentacja w tabeli 
+tbl1 = table(df$psppipla01,df$vote01)
+tbl1
+
+```
+Dla lepszego przeanalizowania danych generuję wykres mozaikowy przedstawiający jak rozkładają się tendencje do głosowania pod wzgledem przekonania o tym, czy jednostka ma wpływ na system polityczny.
+```{r wykres}
+#tworzenie dataframe z danymi
+tbl_df = df %>% 
+  filter(!is.na(vote01), !is.na(psppipla01))
+
+#rysowanie wykresu
+ggplot(data = tbl_df) +
+  geom_mosaic(aes(x=product(psppipla01), fill = psppipla01, 
+                  conds = product(vote01))) + 
+  labs(x = 'Vote', y = 'psppipla') +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank()) +
+  theme(axis.ticks.y=element_blank(), axis.ticks.x=element_blank()) +
+  theme(legend.position = "none")
+
+```
+Z wykresu można odczytać pewne tendencje. Osoby, które nie biorą udziału częściej odpowiadały, że nie wierzą w swój wpływ na system polityczny. Z drugiej strony było więcej osób, które brały udział w wyborach i jednocześnie uważały, że mają wpływ na system w porównaniu do osób, które nie uczestniczyły w wyborach. 
+
+Sprawdzam, czy wyżej opisane różnice są znaczące statystycznie.
+```{r test niezależności i siła związku}
+#tworzenie tabeli
+tbl1 = table(df$psppipla01,df$vote01)
+#chi2 test
+chisq.test(tbl1)
+chisq.test(tbl1,filter,sim=T,B=1000) #bootstrapped chi2
+
+#Fisher test
+fisher = fisher.test(tbl1, simulate.p.value=TRUE)
+fisher #OR=1 oznacza brak związku
+```
+Wartość krytyczna testu t dla danych charakteryzujących się 4 stopniami swobody i alfą 0,05 wyniosi około 9,5. Wartość testu Chi-kwadrat wynosi 25.4 co pozwala na odrzucienie hipoteyę zerowej o braku zależności między danymi (p-value < 0.001). Test chi-kwadrat wykazał zatem, że istnieje istotna zależność między przekonaniem o wypływnie na system polityczny a braniem udziału w wyborach. 
+
+Test chi- kwadrat z symulowanym p-value na podstawie 1000 powtórzeń był równeiż większy niż 9.5 i wynosił 25,4 (p-value < 0.001). Pozwala to na odrzucie hipotezy zerowej i potwierdzenie zależności między danymi.
+
+Test Fishera wykazał istotną zależność między zmiennymi (p-value = 0.0005).
+
+Powyższe testy potwierdzają istnienie istotnej zależność między przekonaniem o wypływnie na system polityczny a faktem, czy osoba bierze udziału w wyborach. 
+
+## Branie udziału w wyborach a poziom zaufania względem policji
+Czy występuje zależność między ufnością policji a braniem udziału w wyborach? 
+
+Opis zmiennych:
+  
+  * zmienna niezależna **votes**: zmienna nominalna vote01 - czy osoba bierze udział w wyborach
+  
+  * zmienna zależna **police**: zmienna ilościowa trstplc - jak bardzo osoba ufa policji (NO 0-10 complete trust)
+
+W pierwszym kroku przygotowuje zmienne i analizuje ich statystyki opisowe:
+```{r statystyki opisowe}
+#przygotowanie zmiennych
+
+#usuwanie braków w trstplc
+levels(df$trstplc)
+
+#tworzenie zmiennych
+police = as.numeric(df$trstplc)
+votes = df$vote01
+
+#ładowanie statysyk
+describeBy(police, group=votes)
+
+```
+Dla lepszego przenalizowania danych tworzę wykres boksowy.
+```{r wykres1}
+#wykres boksowy
+boxplot(police ~ votes) 
+```
+Z wykresu można zaobserwować, że istnieje róźnica między grupą, która wzięła udział w wyborach a tą, która nie głosowała pod względem poziomu zaufania do policji.
+
+W celu sprawdzenia istotności tej różnicy przeprowadzę testy statystyczne. W pierwszym kroku sprawdzam, czy dane układają się w rozkład normalny.
+```{r test normalnosci1}
+#test rozkładu normanego 
+shapiro.test(police) #Shapiro-Wilk normality test 
+```
+Można to lepiej zobaczyć na wykresach:
+``` {r wykresy4}
+#Wykresy 
+res_aov = aov(police ~ votes) #ANOVA
+par(mfrow = c(1, 2)) # combine plots
+plot(res_aov, which = 3) # 1. Homogeneity of variances
+plot(res_aov, which = 2) # 2. Normality
+
+
+```
+Ponieważ dane rozkładaja się prawie normalnie możemy przeporwadzić test te do sprawdzenia istnienia zależnosci miedzy zmiennymi police ~ votes.
+```{r test niezależności i siła związku1}
+# test t
+t.test(police ~ votes)
+
+#ANOVA
+report(res_aov)
+
+# test Shapiro-Wilk dla ANOVA
+shapiro.test(res_aov$residuals) 
+
+
+```
+Test t wykazał, że istnieje istotna zależność miedzy faktem, czy ktoś głosuje, a jego poziomem zaufania do policji (95% Cl [0.2161021, 0.7838054], p = 0.0005788).
+
+Dodatkowo, ANOVA potwierdziłą, że efekt główny zmiennej niezależnej jest istotny i mały ((F(1, 1324) = 12.75, p < .001; Eta2 = 9.54e-03, 95% CI [2.78e-03, 1.00])). 
+
+Podsumowując, istnieje zależość miedzy zaufaniem do policji a faktem, czy ktoś brał udział w wyborach.
+
+
+## Czas korzystania z telefonu a przekonaie o tym, czy ludzie są bardziej pomocni, czy samolubni
+Czy istnieje zależność miedzy czasem korzystania z telefonu a przekonamiem, że ludzie są bardziej pomocni lub bardziej samolubni?
+  
+Opis zmiennych:
+  
+  * zmienna niezależna **komp**: zmienna ilościowa netustm - jak dużo osoba korzysta z komputera (w minutach)
+  
+  * zmienna zależna **ufnosc**: zmienna ilościowa pplhlp - jak bardzo uważasz, że lubie starają się być pomocni, czy raczej martwią się tylko o siebie? (ludzie dbają tylko o siebie 0-10 ludzie są pomocni)
+ 
+
+W pierwszym kroku tworzę dataframe z danymi oraz analizuje statystyki opisowe:
+```{r statystyki opisowe2}
+#tworzenie tabeli danych 
+reg_df = df[, c("netustm", "pplhlp")]
+names(reg_df)[1:2] = c("komp", "ufnosc")
+
+#modyfikowanie zmiennych na numeryczne 
+reg_df = as.data.frame(sapply(reg_df, as.numeric))
+
+#wyświetlanie statystyki opisowej
+summary(reg_df)
+```
+Tworzę model regresji liniowej ufnosc ~ komp oraz prezentuje informacje o modelu.
+```{r statystyki opisowe3}
+#tworzenie modelu
+model1 = lm(ufnosc ~ komp, data=reg_df)
+#model1 #Print the regression model
+summary(model1)
+```
+Żeby lepiej przeanalizować dane tworzę wykres modelu ufnosc ~ komp:
+```{r wykres2}
+#wykres danych
+ggplot(reg_df, aes(x = komp, y = ufnosc)) +
+  geom_point() +
+  stat_smooth()
+
+```
+Dane są rozłożone w mniej więcej równomierną chmurę. Linia regresji nie wyglada też jakby miała wystapić zalezność między danymi. Dla pewności sprawdzam, czy istnieje korelacja między czasem korzystania z telefonu a przekoaniem co do pomocy innym.
+```{r test niezależności i siła związku2}
+#liczenie korelacji
+cor(reg_df, use = "pairwise.complete.obs")
+
+```
+Test korelacji nie wykrył istotnego związku liniowego między czasem korzystania z telefonu a przekonamiem, że ludzie są bardziej pomocni lub bardziej samolubni (r = 0.089).
+
+
+
