@@ -6,7 +6,8 @@ Data were taken from the ESS survey: https://www.europeansocialsurvey.org/
 
 Data analysis was carried out at different levels of measurement: nominal, ordinal, quantitative, and quotient.
 
-A corresponding analysis was carried out for each set:
+
+## A corresponding analysis was carried out for each set:
 (a) Nominal/ ordinal x nominal/ ordinal variable
 Cross-tabulation with column percentages; test of independence, i.e. Chi2 test, bootstrapped Chi2, Fisher's exact test; a measure of the strength of association, mosaic or bar/column plot by category of the other variable.
 
