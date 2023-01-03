@@ -16,16 +16,16 @@ Description of variables:
 - ordinal variable psppipla - degree of conviction about the impact on the political system (Not at all; Very
 little; Some; A lot; A great deal)
 - nominal variable vote01 - did the person vote? (YES, NO)
-**
-(b) Nominal/ ordinal x quantitative variable**
+
+**(b) Nominal/ ordinal x quantitative variable**
 
 Descriptive statistics (means, variances, IQR, etc.) by group by category of the second variable; test of independence, i.e. t-student, ANOVA, regression or their non-parametric equivalents; a measure of the strength of association: R2 from regression; box plot or density plot or histogram of a quantitative variable by grouping by category of nominal/order variable
 
 Description of variables:
 - independent variable votes: nominal variable vote01 - whether the person participates in the election
 - dependent variable police: quantitative variable trstplc - how much does the person trust the police (NO 0-10 complete trust)
-** 
- (c) Quantitative x quantitative variable**
+
+**(c) Quantitative x quantitative variable**
 
 Descriptive statistics (mean, variance, IQR, etc.) of both variables; Pearson correlation or R2 from regression; scatter plot with a line of best fit
 
