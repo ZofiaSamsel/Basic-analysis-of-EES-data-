@@ -33,4 +33,4 @@ Description of variables:
 - independent variable comp: quantitative variable netustm - how much a person uses the computer (in minutes)
 - dependent variable confidence: quantitative variable pplhlp - how much do you think that others are likely to try to be helpful, or are they only concerned about themselves? (people only care about themselves 0-10 people are helpful)
 
-Project done for the Statistics course 2022/2023 at the Jagiellonian University.
+Project was done for the Statistics course 2022/2023 at the Jagiellonian University.
